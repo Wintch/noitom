@@ -1,8 +1,24 @@
 # Next step
 
-> ## START HERE (2026-08-20, T022 — node count tracks what's actually plugged in
-> ## (T021), and a single-sensor calibration capture exposed new protocol surface
-> ## incl. the first Set/0x0a frame, likely the calibration-write itself)
+> ## START HERE (2026-08-20, T023 — scope changed: hardware physically can't do a
+> ## full skeleton, so the goal is no longer a production Linux mocap stack, it's
+> ## gathering what data we can and running a small bounded experiment on it)
+
+**Scope change (T023), read this before picking Path A back up:** this kit's straps
+physically come apart at several connector/joint points on their own during normal
+handling - a real, recurring mechanical fault, not "unreliable connections" in the
+abstract (T019-T022 chased this as a possible protocol gap; it isn't one, T020-T021
+already closed that). It's also the "basic" Perception Neuron configuration to begin
+with, below the 11/25/32-neuron minimums Axis Neuron's own Mode Hint screen expects
+(`docs/00`). Net effect: the reliably-working sensor count tops out at a partial pose
+(e.g. one full arm+fingers), never a full-body skeleton, no matter how much protocol
+work happens. **Per the owner: stop treating "production-usable native-Linux mocap
+stack" as the goal.** The goal now is to gather whatever clean data this specific
+hardware still gives and scope one small, bounded experiment around it - not to
+budget multi-week AHRS/skeleton-mapping effort as if full-body capture were still on
+the table. The technical notes below (Path A steps, captured data, tooling) are all
+still accurate and still useful *as data to work with*, just not as a march toward a
+full production stack.
 
 Both morning blockers (licensing, missing capture/CRC-8) are resolved, and Path A
 is proven end-to-end including the actual **Connect** command: `scripts/pn-connect.py`
@@ -43,7 +59,9 @@ physically connected:**
   LEDs = pairing vs. power-only, and the daisy-chain-under-one-node-id possibility from
   `docs/00`'s `PNS00161` internal cable is still untested), but no further protocol
   reverse-engineering is warranted here — don't re-chase a mode-select frame, `03 0d 00 01 00`
-  is confirmed sufficient (T020 backs T015).
+  is confirmed sufficient (T020 backs T015). The remaining open question here (LEDs =
+  pairing vs. power-only) is now moot - see T023 below, the straps have a confirmed
+  physical fault independent of that.
 - **T021, further confirming T020:** with only the right-arm+hand straps physically
   active (not the earlier 4-sensor set), `NodeFirmwareVersions`/`NodeSerialNumbers`
   enumerated 9-10 *different* node ids (`5b,5c,5d,61,62,66,67,6c,71,78`), not the same 4
@@ -65,32 +83,43 @@ physically connected:**
   live-checked with the new `scripts/pn-meter.py` right after: the sensor (node `0xa1`)
   kept streaming cleanly at ~60fps, unmoved, right after the Windows session - the
   calibration/demagnetize step didn't break it.
+- **T023, scope change:** owner confirms directly, from physically handling the
+  straps across all of today's sessions, that several connector/joint points come
+  apart on their own during normal handling - a real recurring mechanical fault, the
+  actual root cause behind T019-T021's node-count instability. Combined with this
+  being the "basic" kit (below Axis Neuron's own 11/25/32-neuron mode minimums,
+  `docs/00`), full-body capture is off the table with this hardware regardless of
+  protocol work. See the scope-change note at the top of this file.
 
-**Path A (native Linux, the original goal) — next concrete actions, in order:**
-0. Fold T022's new frames into `docs/01-protocol-research.md`'s known-command table
-   (currently only documents Connect/Disconnect/the two node-enum triggers) and try
-   replaying the `dst=a1`-direct-addressing pattern and the `03 0b`/`02 01` Function
-   payloads from Linux against a currently-connected sensor to see what they actually
-   do outside of the Windows wizard - this is a small, well-scoped follow-up, do it
-   before diving back into full IMU-payload decoding.
-1. Decode the `type=0x09` IMU payload fields themselves (accel/gyro/mag, byte 5 onward -
-   docs/01 says 31 bytes raw, nobody has published this). `test_use.pcapng`'s 8521 frames
-   are still the best *clean* sample (T017); `windows-kit/capturas/full_right.pcapng`
-   (94904 distinct frames, T020) is far bigger but its frames haven't been sanity-checked
-   at that volume yet - `find_frames()`'s naive `0xfd`/`0xfe` scan may be mis-splitting
-   frames when run over this much data (T020 saw near-uniform garbage on a byte-4 node-id
-   extraction there, unlike the clean 4-node result on smaller captures), so treat it as
-   unvalidated until that's checked, not as a bigger version of the same trusted sample.
-   Look for stable-magnitude byte ranges (likely accelerometer, ~1g at rest) as an anchor,
-   the way T010 anchored CRC-8 on real data.
-2. Once raw IMU is decoded: AHRS fusion (Madgwick/Mahony) + skeleton mapping is the big
-   remaining undocumented step - budget real time for it, don't expect a quick win.
-   `windows-kit/capturas/scene-export/` (T020: `SceneChar00.bvh`, `Scene.raw`, `Scene.xml`)
-   is real ground-truth output from Axis Neuron's own fusion, pulled specifically to check
-   any independent decode/fusion attempt against later - not yet used for anything.
-3. Cross-check `upgrade.pcapng`/`test_use.pcapng` byte-for-byte against T016's confirmed
-   Connect frame, and use it to explain the small fraction of frames the current CRC-8
-   formula doesn't yet match.
+**Path A, rescoped from "build a production stack" to "candidate small experiments" -
+pick one, don't try to do all of them:**
+- Fold T022's new frames into `docs/01-protocol-research.md`'s known-command table
+  (currently only documents Connect/Disconnect/the two node-enum triggers) and try
+  replaying the `dst=a1`-direct-addressing pattern and the `03 0b`/`02 01` Function
+  payloads from Linux against a currently-connected sensor to see what they actually
+  do outside of the Windows wizard - cheap, bounded, doesn't need more sensors than
+  we have.
+- Decode the `type=0x09` IMU payload fields themselves (accel/gyro/mag, byte 5 onward -
+  docs/01 says 31 bytes raw, nobody has published this) using data already captured -
+  `test_use.pcapng`'s 8521 frames (T017) or `linux-kit/capturas/meter-live.bin` (T022,
+  live). `windows-kit/capturas/full_right.pcapng` (94904 distinct frames, T020) is
+  bigger but its frames aren't sanity-checked at that volume yet (`find_frames()`'s
+  naive `0xfd`/`0xfe` scan may mis-split at this size, T020/T021's caveat) - don't
+  treat it as a bigger version of the trusted sample without checking that first.
+  Look for stable-magnitude byte ranges (likely accelerometer, ~1g at rest) as an
+  anchor, the way T010 anchored CRC-8 on real data. This is the most promising
+  "small experiment": self-contained, uses data already on disk, doesn't depend on
+  the straps behaving. Full AHRS fusion + skeleton mapping past this point is
+  explicitly **not** the goal anymore (T023) - if this gets decoded, a good stopping
+  point is plotting/sanity-checking one sensor's raw axes over time, not building a
+  fusion pipeline.
+- Cross-check `upgrade.pcapng`/`test_use.pcapng` byte-for-byte against T016's confirmed
+  Connect frame, and use it to explain the small fraction of frames the current CRC-8
+  formula doesn't yet match. Minor, low-priority.
+- `windows-kit/capturas/scene-export/` (T020: `SceneChar00.bvh`, `Scene.raw`,
+  `Scene.xml`) is real ground-truth output from Axis Neuron's own fusion - useful as a
+  reference if anyone ever wants to sanity-check a partial decode against it, not a
+  reason to build a competing fusion stack.
 
 **Path D (pragmatic, if the goal is using the mocap data rather than a from-scratch
 Linux stack) — see `docs/06-bvh-broadcast-alternative.md`:**

@@ -8,17 +8,19 @@
 physically come apart at several connector/joint points on their own during normal
 handling - a real, recurring mechanical fault, not "unreliable connections" in the
 abstract (T019-T022 chased this as a possible protocol gap; it isn't one, T020-T021
-already closed that). It's also the "basic" Perception Neuron configuration to begin
-with, below the 11/25/32-neuron minimums Axis Neuron's own Mode Hint screen expects
-(`docs/00`). Net effect: the reliably-working sensor count tops out at a partial pose
-(e.g. one full arm+fingers), never a full-body skeleton, no matter how much protocol
-work happens. **Per the owner: stop treating "production-usable native-Linux mocap
-stack" as the goal.** The goal now is to gather whatever clean data this specific
-hardware still gives and scope one small, bounded experiment around it - not to
-budget multi-week AHRS/skeleton-mapping effort as if full-body capture were still on
-the table. The technical notes below (Path A steps, captured data, tooling) are all
-still accurate and still useful *as data to work with*, just not as a march toward a
-full production stack.
+already closed that). The kit is the **11-sensor Kickstarter tier** (`docs/00`,
+confirmed by the owner), matching Axis Neuron's own 11-neuron Mode Hint minimum -
+and per the owner, even before this project, it never reliably registered all 11 at
+once, despite otherwise capturing well and being used successfully for a while. Net
+effect: the reliably-working sensor count tops out at a partial pose (e.g. one full
+arm+fingers), never a full-body skeleton, no matter how much protocol work happens.
+**Per the owner: stop treating "production-usable native-Linux mocap stack" as the
+goal.** The goal now is to gather whatever clean data this specific hardware still
+gives and scope one small, bounded experiment around it - not to budget multi-week
+AHRS/skeleton-mapping effort as if full-body capture were still on the table. The
+technical notes below (Path A steps, captured data, tooling) are all still accurate
+and still useful *as data to work with*, just not as a march toward a full
+production stack.
 
 Both morning blockers (licensing, missing capture/CRC-8) are resolved, and Path A
 is proven end-to-end including the actual **Connect** command: `scripts/pn-connect.py`
@@ -87,9 +89,10 @@ physically connected:**
   straps across all of today's sessions, that several connector/joint points come
   apart on their own during normal handling - a real recurring mechanical fault, the
   actual root cause behind T019-T021's node-count instability. Combined with this
-  being the "basic" kit (below Axis Neuron's own 11/25/32-neuron mode minimums,
-  `docs/00`), full-body capture is off the table with this hardware regardless of
-  protocol work. See the scope-change note at the top of this file.
+  being the 11-sensor Kickstarter tier (`docs/00`) that, per the owner, never
+  reliably registered all 11 even before this project, full-body capture is off
+  the table with this hardware regardless of protocol work. See the scope-change
+  note at the top of this file.
 - **T024, the first small experiment (IMU payload decode, partial):** wrote
   `scripts/imu-payload-scan.py` - CRC-8-validates frames first (fixes T020/T021's
   noise problem), then scans the 31-byte `type=0x09` payload for a byte-aligned int16

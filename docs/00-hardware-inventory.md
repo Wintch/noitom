@@ -19,9 +19,15 @@ for why that matters.
 | Strap/sensor — right arm | **PNS00092** | |
 | Strap/sensor — left foot | **PNS00037** | |
 
-Remaining straps/sensors still need inventorying, and the total count confirmed
-(v1 typically shipped in 9, 18, or 32-sensor kits) once the BVH skeleton mapping is
-built.
+**Kit tier confirmed by the owner: the 11-sensor Kickstarter tier** (matches the
+11-neuron minimum on Axis Neuron's own Mode Hint screen, `docs/pruebas.jsonl` T019).
+Individual straps/sensors below this line are still not all inventoried by label.
+
+The owner used this kit successfully for some time before this project (good
+captures, per the owner directly) and reports always wanting, but never reliably
+getting, all 11 sensors registering at once — i.e. the partial-sensor-count problem
+investigated in T018-T023 is a **long-standing characteristic of this specific kit**,
+not a new failure that appeared during this project's testing.
 
 ## FCC ID search: negative, treated as real
 

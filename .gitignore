@@ -16,6 +16,10 @@ windows-kit/capturas/*.pcapng
 windows-kit/capturas/*.pcap
 windows-kit/capturas/*.tsv
 
+# Same reasoning, Linux side: raw serial dumps from scripts/pn-connect.py's
+# out_file option - decoded/useful findings belong in docs/ instead.
+linux-kit/capturas/*.bin
+
 # Personal correspondence drafts - not project documentation.
 *email-soporte*.txt
 

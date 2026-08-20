@@ -68,4 +68,5 @@ def main():
             print("<- (no response)")
 
 
-main()
+if __name__ == "__main__":
+    main()

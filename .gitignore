@@ -1,0 +1,16 @@
+# Noitom's own proprietary binaries (Axis Studio DLLs/plugins pulled for static
+# analysis). Never redistribute these - they are not ours to publish.
+windows-kit/axis-studio-extract/
+
+# Raw USB captures. Large, and mostly junk until one actually contains the hub's
+# traffic - decoded/useful findings belong in docs/ and docs/pruebas.jsonl instead,
+# not the raw pcapng.
+windows-kit/capturas/*.pcapng
+windows-kit/capturas/*.pcap
+windows-kit/capturas/*.tsv
+
+# Personal correspondence drafts - not project documentation.
+*email-soporte*.txt
+
+__pycache__/
+*.pyc

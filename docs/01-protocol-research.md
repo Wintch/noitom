@@ -33,6 +33,12 @@ releases), but it documents the essentials:
   This matters: the official software (Axis Neuron) does the sensor fusion
   (accelerometer+gyro+magnetometer → orientation) and the skeleton mapping. That
   is **not** reverse-engineered anywhere public.
+  Own finding, not from pelrun: `docs/pruebas.jsonl` T024 - of the 31 raw payload
+  bytes, `[25:31]` (little-endian int16 x3) reconstructs a vector whose magnitude
+  stays ~constant while the sensor is physically rotated - the accelerometer/
+  magnetometer signature, most likely accelerometer given what that capture's
+  Axis Neuron wizard step was actually calibrating. The other ~25 bytes, including
+  wherever gyro lives, are still undecoded.
 
 ### 2. Official software (Axis Neuron) — Windows only
 

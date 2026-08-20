@@ -1,8 +1,8 @@
 # Next step
 
-> ## START HERE (2026-08-20, T023 — scope changed: hardware physically can't do a
-> ## full skeleton, so the goal is no longer a production Linux mocap stack, it's
-> ## gathering what data we can and running a small bounded experiment on it)
+> ## START HERE (2026-08-20, T024 — first IMU payload bytes decoded: bytes [25:31]
+> ## of the 31-byte payload are a stable-magnitude vector, likely accelerometer;
+> ## the rest is still unknown. This is the small experiment T023 called for.)
 
 **Scope change (T023), read this before picking Path A back up:** this kit's straps
 physically come apart at several connector/joint points on their own during normal
@@ -90,6 +90,17 @@ physically connected:**
   being the "basic" kit (below Axis Neuron's own 11/25/32-neuron mode minimums,
   `docs/00`), full-body capture is off the table with this hardware regardless of
   protocol work. See the scope-change note at the top of this file.
+- **T024, the first small experiment (IMU payload decode, partial):** wrote
+  `scripts/imu-payload-scan.py` - CRC-8-validates frames first (fixes T020/T021's
+  noise problem), then scans the 31-byte `type=0x09` payload for a byte-aligned int16
+  triplet whose magnitude stays constant under rotation (T010-style anchor on real
+  data). Found one: **payload bytes `[25:31]`, little-endian int16 x3, magnitude
+  ~69k-72k and stable (CoV 0.038) while T022's capture actively rotates the sensor**,
+  consistent across two unrelated sessions/transports. Leaning accelerometer (matches
+  what Axis Neuron's wizard says that rotate step calibrates), not proven vs
+  magnetometer. The other ~25 payload bytes are still undecoded - no gyro candidate
+  found yet. This is a real result, and also a reasonable stopping point per T023's
+  new scope - see below, don't feel obliged to keep pushing on the rest immediately.
 
 **Path A, rescoped from "build a production stack" to "candidate small experiments" -
 pick one, don't try to do all of them:**
@@ -99,20 +110,18 @@ pick one, don't try to do all of them:**
   payloads from Linux against a currently-connected sensor to see what they actually
   do outside of the Windows wizard - cheap, bounded, doesn't need more sensors than
   we have.
-- Decode the `type=0x09` IMU payload fields themselves (accel/gyro/mag, byte 5 onward -
-  docs/01 says 31 bytes raw, nobody has published this) using data already captured -
-  `test_use.pcapng`'s 8521 frames (T017) or `linux-kit/capturas/meter-live.bin` (T022,
-  live). `windows-kit/capturas/full_right.pcapng` (94904 distinct frames, T020) is
-  bigger but its frames aren't sanity-checked at that volume yet (`find_frames()`'s
-  naive `0xfd`/`0xfe` scan may mis-split at this size, T020/T021's caveat) - don't
-  treat it as a bigger version of the trusted sample without checking that first.
-  Look for stable-magnitude byte ranges (likely accelerometer, ~1g at rest) as an
-  anchor, the way T010 anchored CRC-8 on real data. This is the most promising
-  "small experiment": self-contained, uses data already on disk, doesn't depend on
-  the straps behaving. Full AHRS fusion + skeleton mapping past this point is
-  explicitly **not** the goal anymore (T023) - if this gets decoded, a good stopping
-  point is plotting/sanity-checking one sensor's raw axes over time, not building a
-  fusion pipeline.
+- Continue decoding the `type=0x09` IMU payload: `[25:31]` (accel candidate) is found
+  (T024), the other ~25 bytes aren't. `scripts/imu-payload-scan.py` is reusable -
+  rerun/extend it (e.g. exclude the now-known `[25:31]` window and re-rank, or try
+  wider/narrower field widths) against `test_use.pcapng` (T017, 8521 frames) or a
+  fresh capture. `windows-kit/capturas/full_right.pcapng` (94904 distinct frames,
+  T020) is bigger but unvalidated at that volume even by CRC-8 alone - check the
+  CRC-valid fraction before trusting it as a bigger sample. Confirming accel-vs-
+  magnetometer for `[25:31]` (second still capture at a different fixed tilt, check
+  if the vector direction follows physical tilt or compass heading) is a cheap
+  next step if this gets picked back up. Full AHRS fusion + skeleton mapping past
+  this point is explicitly **not** the goal anymore (T023) - plotting/sanity-checking
+  raw axes over time is a fine stopping point, not a fusion pipeline.
 - Cross-check `upgrade.pcapng`/`test_use.pcapng` byte-for-byte against T016's confirmed
   Connect frame, and use it to explain the small fraction of frames the current CRC-8
   formula doesn't yet match. Minor, low-priority.

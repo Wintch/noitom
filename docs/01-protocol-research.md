@@ -35,6 +35,12 @@ releases), but it documents the essentials:
   FTDI/VCP driver) — a classic weak point under Wine.
 - **Zero Wine/Proton/CrossOver/VM reports** anywhere (WineHQ AppDB, ProtonDB,
   CrossOver DB, forums, Reddit) — neither for nor against. Undocumented ground.
+  Re-checked T011 ([`pruebas.jsonl`](pruebas.jsonl)): still true, no WineHQ AppDB
+  entry exists at all. The `/dev/ttyUSBx` passthrough itself
+  (`~/.wine/dosdevices/comN`) is a normal, well-documented Wine mechanism, but one
+  real risk surfaced: a documented Wine bug caps reported serial baud rate at
+  115200, which broke another app's continuous high-rate USB-serial streaming —
+  worth checking for early if Wine is ever tried, since it would fail silently.
 
 ### 3. The "official" Linux path the community already uses
 
@@ -92,8 +98,18 @@ enumerates as standard serial, Wine might not even need the VCP driver (Linux
 would already expose it). Worth trying in parallel with A, but not something to
 depend on.
 
+**D. Don't reverse-engineer at all — consume Axis Neuron's own live broadcast**
+Legacy Axis Neuron has a built-in network broadcast of the already-fused skeleton
+(BVH over TCP/UDP, ports 7001/7003) that Unity can consume directly (via
+[keijiro/NeuronAnimator](https://github.com/keijiro/NeuronAnimator) or Noitom's own
+SDK package) — no protocol work, no license, found T011. Only relevant if the goal
+is *using* the mocap data (e.g. in a game engine) rather than a fully native Linux
+stack; doesn't advance A/B/C at all. See
+[`06-bvh-broadcast-alternative.md`](06-bvh-broadcast-alternative.md).
+
 We are pursuing **A**, with an attempted shortcut through a one-time Windows
 capture (see [`03-windows-capture-procedure.md`](03-windows-capture-procedure.md))
-to skip reverse-engineering the CRC-8 by hand — currently blocked, see
-[`04-licensing-blocker.md`](04-licensing-blocker.md) and
-[`docs/pruebas.jsonl`](pruebas.jsonl) T6-T7.
+to skip reverse-engineering the CRC-8 by hand — capture obtained and **CRC-8
+solved**, see [`05-crc8-solved.md`](05-crc8-solved.md) (T009-T010). Licensing
+blocker also resolved, see [`04-licensing-blocker.md`](04-licensing-blocker.md)
+(T008).

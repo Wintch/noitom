@@ -2,6 +2,13 @@
 # analysis). Never redistribute these - they are not ours to publish.
 windows-kit/axis-studio-extract/
 
+# Local-only durable backup of the legacy Axis Neuron installer + installed app
+# (Noitom's proprietary software, likely never officially available again -
+# docs/04, docs/05). Same reasoning as axis-studio-extract/: worth keeping on
+# this disk forever, never worth committing/redistributing under this repo's
+# MIT license.
+windows-kit/vendor-backup/
+
 # Raw USB captures. Large, and mostly junk until one actually contains the hub's
 # traffic - decoded/useful findings belong in docs/ and docs/pruebas.jsonl instead,
 # not the raw pcapng.
@@ -14,3 +21,4 @@ windows-kit/capturas/*.tsv
 
 __pycache__/
 *.pyc
+.venv/

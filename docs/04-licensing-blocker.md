@@ -1,5 +1,19 @@
 # The licensing blocker
 
+> **Resolved, T008 ([`pruebas.jsonl`](pruebas.jsonl)).** A specific older build,
+> `Axis_Neuron_x64_3_8_42_8591_20180411034619617000_X64` (2018-04-11, legacy Axis
+> Neuron for PN32/v1 — not the Axis Studio discussed below), runs with **no
+> license/activation prompt at all** and genuinely talks to this exact hub: read
+> `HubPID PNHDE000018` (matches this kit's serial suffix `de000018`) and
+> successfully upgraded its firmware. The rest of this doc (Axis Studio's dead end,
+> the legacy Wibu-dongle activation system) stays as the record of what was tried
+> and why it didn't apply — the actual unblock came from a different, older
+> installer entirely, not from resolving the Wibu/Axis-Studio activation question
+> below. No reply from `contact@neuronmocap.com` was needed in the end. The
+> installer and installed app are backed up locally, permanently, at
+> `windows-kit/vendor-backup/` (gitignored - see `windows-kit/README.md`) since
+> Noitom is unlikely to ever make this build available again.
+
 ## What's installed vs. what's needed
 
 The owner's Windows install already has **Axis Studio** (`Program Files\NOITOM\Axis

@@ -1,5 +1,14 @@
 # The one Windows trip: capturing the handshake
 
+> **Status**: a real capture was obtained (T009, [`pruebas.jsonl`](pruebas.jsonl)) and
+> the CRC-8 solved from it ([`05-crc8-solved.md`](05-crc8-solved.md)) — but not quite
+> via the procedure below. `capture.ps1` worked as designed, but rather than pressing
+> the main window's "Connect", the session that got captured was the Upgrade dialog's
+> hub-firmware-update flow (T008) — still real `0xfd...0xfe` traffic, just not the
+> literal `Connect` command this doc set out to find. `type=0x09` IMU frames and the
+> exact `Connect` bytes are still open — the procedure below is exactly what to rerun
+> for that, now unblocked (`04-licensing-blocker.md` is resolved), see `NEXT-STEP.md`.
+
 ## Why
 
 We need the exact bytes of the "connect" command Axis Neuron sends the hub on
@@ -22,9 +31,8 @@ the exact byte, not understand the algorithm in general).
 - **Wireshark**, installed **with the USBPcap component checked** (not on by
   default). Reboot Windows after installing — USBPcap does not work otherwise.
   <https://www.wireshark.org/download.html>
-- **Axis Neuron** (Noitom's legacy software for PN32/v1) — see
-  [`04-licensing-blocker.md`](04-licensing-blocker.md), this is currently the
-  actual blocker, not the capture mechanics.
+- **Axis Neuron** (Noitom's legacy software for PN32/v1) — a working unlicensed
+  build is confirmed, see [`04-licensing-blocker.md`](04-licensing-blocker.md).
 - The PNHU01 hub, connected by USB (the **data** port, not power-only).
 
 ## Running it: `windows-kit/capture.ps1`

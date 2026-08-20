@@ -12,3 +12,9 @@ Full procedure, requirements, and what went wrong the first time:
   current blocker before rerunning this).
 - `axis-studio-extract/` — Noitom's own DLLs, pulled for local static analysis only.
   Gitignored on purpose; never redistribute these.
+- `vendor-backup/` — durable local backup of the working, unlicensed legacy Axis
+  Neuron install (`docs/04`, `docs/05`): the installer zip, the full installed
+  app folder, and its firmware/bodies config. Noitom is unlikely to ever make
+  this available again, so it's worth keeping on this disk indefinitely - but
+  gitignored on purpose, same reasoning as `axis-studio-extract/`: never
+  redistribute Noitom's proprietary software under this repo's MIT license.

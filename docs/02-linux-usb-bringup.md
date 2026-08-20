@@ -56,3 +56,9 @@ combinations to brute-force without a real reference. T6.
 [`03-windows-capture-procedure.md`](03-windows-capture-procedure.md). Once we have
 the exact bytes Axis Neuron sends, we can replay them verbatim without needing to
 understand the CRC-8 algorithm at all.
+
+> **Update, T009-T010**: that capture happened (via a firmware-upgrade session, not
+> the main "Connect" flow) and the CRC-8 algorithm itself has since been recovered
+> from it — see [`05-crc8-solved.md`](05-crc8-solved.md). The next real test is
+> replaying a constructed `Connect` frame from `/dev/ttyUSB0` with the now-known
+> CRC-8, per Path A above.

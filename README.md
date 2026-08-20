@@ -23,9 +23,12 @@ as positive results — see [`docs/pruebas.jsonl`](docs/pruebas.jsonl).
 | USB transport | ✅ confirmed generic CP210x, `/dev/ttyUSB0`, no driver needed — `docs/02` |
 | Serial permissions | ✅ `dialout` group, works without full relogin — `docs/02` |
 | Protocol framing | ✅ documented by prior art (`0xfd`...CRC8...`0xfe`) — `docs/01` |
-| CRC-8 algorithm | ❌ unknown, not published anywhere, blind brute-force exhausted — `docs/02` T6 |
-| Handshake capture (Windows, one-time) | ❌ blocked — first attempt caught the wrong USB interface, and Axis Studio needs a license the owner doesn't currently have — `docs/03`, `docs/04` |
-| IMU payload decoding | ⏳ not started — needs the handshake first |
+| CRC-8 algorithm | ✅ reverse-engineered from a real capture, 98% verified — `docs/05` |
+| Licensing (legacy Axis Neuron, unactivated) | ✅ a specific older build runs and talks to the hub with no license at all — `docs/04` |
+| Handshake capture (Windows, one-time) | ✅ obtained (via a firmware-upgrade session) — `docs/03`, `docs/05` |
+| Two-way comms from Linux | ✅ confirmed — self-constructed frame sent at 921600 baud, hub replies for real — `docs/05` T012 |
+| Live-stream-to-Unity alternative (no RE needed) | ✅ documented, license-free path exists — `docs/06` |
+| IMU payload decoding | ⏳ not started — next real step is trying a `Connect`/streaming command the same way |
 | Sensor fusion (AHRS) | ⏳ not started |
 | Skeleton mapping / BVH export | ⏳ not started |
 
@@ -37,7 +40,9 @@ as positive results — see [`docs/pruebas.jsonl`](docs/pruebas.jsonl).
 | [01](docs/01-protocol-research.md) | Prior art on the wire protocol, and the paths considered |
 | [02](docs/02-linux-usb-bringup.md) | USB bring-up on Linux, probing attempts, honest negatives |
 | [03](docs/03-windows-capture-procedure.md) | The one-time Windows capture session, and what went wrong the first try |
-| [04](docs/04-licensing-blocker.md) | The Axis Studio/Neuron licensing dead end, and what's being tried about it |
+| [04](docs/04-licensing-blocker.md) | The Axis Studio/Neuron licensing dead end — and how it turned out not to matter |
+| [05](docs/05-crc8-solved.md) | The CRC-8 algorithm, reverse-engineered from a real capture |
+| [06](docs/06-bvh-broadcast-alternative.md) | The pragmatic alternative: Axis Neuron's built-in BVH broadcast into Unity |
 
 ## Getting started
 
@@ -46,7 +51,13 @@ as positive results — see [`docs/pruebas.jsonl`](docs/pruebas.jsonl).
 python3 -m venv .venv && . .venv/bin/activate && pip install pyserial
 
 # Once a real capture exists (see docs/03):
-python3 scripts/parse-pn-capture.py windows-kit/capturas/connect_*-trim.pcapng
+python3 scripts/parse-pn-capture.py windows-kit/capturas/upgrade.pcapng
+
+# Recover/verify the CRC-8 algorithm from a real capture (see docs/05):
+python3 scripts/crc8-search.py windows-kit/capturas/upgrade.pcapng
+
+# Talk to the real hub directly from Linux (see docs/05, T012):
+python3 scripts/pn-send.py /dev/ttyUSB0 921600
 ```
 
 ## Reference hardware
@@ -58,16 +69,11 @@ in on any recent kernel).
 
 ## Contributing
 
-The actual blocker right now is **not engineering** — it's getting one clean USB
-capture of Axis Neuron/Studio pairing with the hub (`docs/03`, `docs/04`). If you
-have:
-
-- A working, licensed copy of legacy **Axis Neuron** (PN32/v1) and 20 minutes on
-  Windows, or
-- Any public documentation of the CRC-8 algorithm used by Noitom's `0xfd...0xfe`
-  framing (from firmware, another SDK, or a different reverse-engineering effort)
-
-either one skips the current blocker entirely.
+The licensing and CRC-8 blockers that used to gate this project are resolved
+(`docs/04`, `docs/05`) — the current actual next step is replaying a constructed
+`Connect` frame from `/dev/ttyUSB0` on Linux, see `NEXT-STEP.md`. If you have real
+IMU payload structure (type `0x09`) or skeleton-mapping/AHRS-fusion experience for
+this exact hardware generation, that's the part still genuinely unstarted.
 
 Everything in this repo is written in English. Measurements beat opinions: if you
 assert something, say how you measured it.

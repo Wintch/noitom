@@ -1,7 +1,8 @@
 # Next step
 
-> ## START HERE (2026-08-20, T019 — 4 sensors enumerate/stream, owner re-checking on
-> ## Windows whether more should show up)
+> ## START HERE (2026-08-20, T022 — node count tracks what's actually plugged in
+> ## (T021), and a single-sensor calibration capture exposed new protocol surface
+> ## incl. the first Set/0x0a frame, likely the calibration-write itself)
 
 Both morning blockers (licensing, missing capture/CRC-8) are resolved, and Path A
 is proven end-to-end including the actual **Connect** command: `scripts/pn-connect.py`
@@ -28,34 +29,66 @@ physically connected:**
   sensors report the identical version blob `00100a011c05` — last-byte match (`0a`=10,
   `05`=5) against the on-screen Boot 1.0.0.10 / App 1.0.1.5 (`shara/photo_2026-08-20_08-
   46-11.jpg`) is consistent, but the full byte→field mapping isn't solved.
-- **Open discrepancy, unresolved:** only 4 node ids (`0x01`, `0x5b`, `0x5d`, `0x5e`) ever
-  enumerate or stream, confirmed both in the IMU stream over a 20s window and in the
-  hub's own `NodeSerialNumbers` (`0x7c`) frame — not a sampling artifact. Owner reports
-  seeing more sensor LEDs lit than that. Leading hypothesis: our bare `03 0d 00 01 00`
-  Connect may skip a "select mode" step — the Windows `Mode Hint` screenshot
-  (`shara/photo_2026-08-20_08-45-59.jpg`, same session) shows Axis Neuron checking
-  connected-neuron count against 11/25/32-neuron mode minimums before it lets Connect
-  proceed, a step our simplified frame never sends. Not confirmed - also possible the
-  LED just indicates power, not hub pairing, or that some sensors are daisy-chained
-  (`PNS00161` internal cable per `docs/00`) under one shared logical node id.
-
-**Immediate next step (owner is doing this now, back on Windows):** visually recount how
-many sensors are actually lit vs. how many Axis Neuron itself reports as connected in the
-Mode Hint screen, to settle whether 4 is really all that's paired or whether a mode-select
-frame is missing from our Connect sequence. If it's the latter, the fix is to capture Axis
-Neuron doing a real Connect with all sensors attached (reuse `windows-kit/capture.ps1`,
-same procedure as `03-windows-capture-procedure.md`) and diff it against our
-`03 0d 00 01 00` sequence to find the missing mode-select frame.
+- **Discrepancy from T019, now resolved (T020):** the "does our Connect skip a mode-select
+  step" hypothesis is refuted. `windows-kit/capturas/again1.pcapng` captured Axis Neuron's
+  own real, repeated Connect/poll cycle (`03 02 00 00 00` -> `NodeFirmwareVersions`,
+  `03 07 00 00 00` -> `NodeSerialNumbers`, `03 0d 00 01 00` -> Connect, cycled several
+  times) — and the real vendor app, doing its own real handshake, caps at the exact same
+  small node set (`01`/`5b`/`5d`/`5e` in firmware list, `5b`/`5d`/`5e`/`78` in serial-number
+  list) every single time, never the ~11 sensors the Upgrade dialog shows as firmware-updated
+  (`shara/photo_2026-08-20_09-37-30.jpg`). **Current leading explanation, per the owner
+  directly**: strap hardware quality is poor on this kit, connections are intermittent, and
+  getting the full kit paired simultaneously is inherently unreliable — this is a known,
+  recalled problem, not a missing protocol step. Not fully closed (no byte-level proof the
+  LEDs = pairing vs. power-only, and the daisy-chain-under-one-node-id possibility from
+  `docs/00`'s `PNS00161` internal cable is still untested), but no further protocol
+  reverse-engineering is warranted here — don't re-chase a mode-select frame, `03 0d 00 01 00`
+  is confirmed sufficient (T020 backs T015).
+- **T021, further confirming T020:** with only the right-arm+hand straps physically
+  active (not the earlier 4-sensor set), `NodeFirmwareVersions`/`NodeSerialNumbers`
+  enumerated 9-10 *different* node ids (`5b,5c,5d,61,62,66,67,6c,71,78`), not the same 4
+  as before. Node count tracks whatever is actually plugged in/working right now, not a
+  fixed protocol ceiling - strengthens the hardware-reliability explanation, doesn't
+  contradict it.
+- **T022, new: a real single-sensor Calibrate/demagnetize session** (owner ran Axis
+  Neuron's single-sensor wizard, `windows-kit/capturas/diagnostico_1sensor.pcapng`,
+  screenshots `shara/photo_2026-08-20_10-07-*.jpg`) exposed protocol surface none of
+  the full-connect captures had: two `GetConfig` keys (`0x01` HubFirmwareVersion,
+  `0x15` HubSerialNumber) confirmed live for the first time; a `Call` addressed
+  `dst=00`; two `Call`s addressed directly `dst=a1` (the sensor's own node id, not the
+  hub `0xc0` - first time seen); `Function` payloads `03 0b 00 00 00` and
+  `02 01 00 00 00` (both new, not in `docs/01`'s known-command list); and, most
+  notably, **the first `type=Set (0x0a)` frame ever captured** - `key=0x0f`, 51 bytes of
+  dense packed binary, timed right where the wizard shows the rotate+data-collection
+  step - a strong candidate for "write calibration coefficients to the sensor," not
+  decoded field-by-field yet. None of this is digested into `docs/01` yet. Separately,
+  live-checked with the new `scripts/pn-meter.py` right after: the sensor (node `0xa1`)
+  kept streaming cleanly at ~60fps, unmoved, right after the Windows session - the
+  calibration/demagnetize step didn't break it.
 
 **Path A (native Linux, the original goal) — next concrete actions, in order:**
-1. Resolve the node-count discrepancy above (owner is on it now).
-2. Decode the `type=0x09` IMU payload fields themselves (accel/gyro/mag, byte 5 onward -
+0. Fold T022's new frames into `docs/01-protocol-research.md`'s known-command table
+   (currently only documents Connect/Disconnect/the two node-enum triggers) and try
+   replaying the `dst=a1`-direct-addressing pattern and the `03 0b`/`02 01` Function
+   payloads from Linux against a currently-connected sensor to see what they actually
+   do outside of the Windows wizard - this is a small, well-scoped follow-up, do it
+   before diving back into full IMU-payload decoding.
+1. Decode the `type=0x09` IMU payload fields themselves (accel/gyro/mag, byte 5 onward -
    docs/01 says 31 bytes raw, nobody has published this). `test_use.pcapng`'s 8521 frames
-   are now the best available sample. Look for stable-magnitude byte ranges (likely
-   accelerometer, ~1g at rest) as an anchor, the way T010 anchored CRC-8 on real data.
-3. Once raw IMU is decoded: AHRS fusion (Madgwick/Mahony) + skeleton mapping is the big
+   are still the best *clean* sample (T017); `windows-kit/capturas/full_right.pcapng`
+   (94904 distinct frames, T020) is far bigger but its frames haven't been sanity-checked
+   at that volume yet - `find_frames()`'s naive `0xfd`/`0xfe` scan may be mis-splitting
+   frames when run over this much data (T020 saw near-uniform garbage on a byte-4 node-id
+   extraction there, unlike the clean 4-node result on smaller captures), so treat it as
+   unvalidated until that's checked, not as a bigger version of the same trusted sample.
+   Look for stable-magnitude byte ranges (likely accelerometer, ~1g at rest) as an anchor,
+   the way T010 anchored CRC-8 on real data.
+2. Once raw IMU is decoded: AHRS fusion (Madgwick/Mahony) + skeleton mapping is the big
    remaining undocumented step - budget real time for it, don't expect a quick win.
-4. Cross-check `upgrade.pcapng`/`test_use.pcapng` byte-for-byte against T016's confirmed
+   `windows-kit/capturas/scene-export/` (T020: `SceneChar00.bvh`, `Scene.raw`, `Scene.xml`)
+   is real ground-truth output from Axis Neuron's own fusion, pulled specifically to check
+   any independent decode/fusion attempt against later - not yet used for anything.
+3. Cross-check `upgrade.pcapng`/`test_use.pcapng` byte-for-byte against T016's confirmed
    Connect frame, and use it to explain the small fraction of frames the current CRC-8
    formula doesn't yet match.
 
@@ -75,5 +108,7 @@ hand-driven Wireshark capture instead of `capture.ps1` (T007) are both closed �
 don't retry either approach; the tooling that replaced them (`crc8-search.py`,
 `capture.ps1`) already exists and works. The Connect command itself is also closed
 as of T015 - `03 0d 00 01 00` is confirmed as *a* working connect, don't re-probe
-other candidates for it - the open question (T019) is whether a mode-select frame
-should precede it, not whether it's the right command.
+other candidates for it. The T019 mode-select-frame question is also closed as of
+T020 - the real Axis Neuron app's own Connect hits the identical 4-node cap, so
+don't re-chase a missing mode-select step; the node-count ceiling is a hardware/
+pairing-reliability question (owner's straps), not a protocol one.

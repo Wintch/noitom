@@ -23,6 +23,12 @@ releases), but it documents the essentials:
   command to configure WiFi exists, but **nobody published the exact payload**
   (how SSID/password get packed). We would need to capture it ourselves for the
   WiFi path.
+  Own capture, not from pelrun: a real single-sensor calibration session
+  (`docs/pruebas.jsonl` T022) produced the first `Set (0x0a)` frame we've actually
+  seen on the wire — `key=0x0f`, not in pelrun's list above, 51 bytes of dense
+  packed binary, timed exactly where Axis Neuron's wizard collects the
+  rotate-the-sensor calibration data. Likely the calibration coefficients being
+  written back to the sensor; not decoded field-by-field.
 - Type `0x09` (IMU data) is **raw sensor data**, not already-fused orientation.
   This matters: the official software (Axis Neuron) does the sensor fusion
   (accelerometer+gyro+magnetometer → orientation) and the skeleton mapping. That

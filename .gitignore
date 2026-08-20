@@ -20,6 +20,12 @@ windows-kit/capturas/*.tsv
 # out_file option - decoded/useful findings belong in docs/ instead.
 linux-kit/capturas/*.bin
 
+# Axis Neuron's own capture/export (BVH + raw sensor dump + actor calibration),
+# pulled from the Windows machine as ground-truth reference data (T020) - same
+# reasoning as the raw pcapng above, large and only useful as a decode reference,
+# not as committed project documentation.
+windows-kit/capturas/scene-export/
+
 # Personal correspondence drafts - not project documentation.
 *email-soporte*.txt
 

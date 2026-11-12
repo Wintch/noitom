@@ -1,5 +1,7 @@
 # noitom
 
+Audience: public
+
 Getting an original [Perception Neuron](https://en.wikipedia.org/wiki/Perception_Neuron)
 motion-capture kit (Noitom, backed on Kickstarter in 2014) running on Linux — no
 Windows, no Wine, using only what the community has already reverse-engineered plus
